@@ -6,12 +6,12 @@
 #include "log_packet.h"
 #include "log_packet_helper.h"
 
-const Fmt CdmaPagingChannelMsg_Fmt [] = {
+const Fmt CdmaPagingChannelMsg_Fmt[] = {
     {UINT, "Message Length", 1},
     {UINT, "Message ID", 1},
 };
 
-const Fmt CdmaPagingChannelMsg_SystemParameters [] = {
+const Fmt CdmaPagingChannelMsg_SystemParameters[] = {
     // pilot_pn: 9 bits
     // config_msg_seq: 6 bits
     // sid: 15 bits
@@ -61,8 +61,8 @@ const Fmt CdmaPagingChannelMsg_SystemParameters [] = {
     {PLACEHOLDER, "T_TDrop", 0},
 };
 
-static int _decode_cdma_paging_channel_msg (const char *b,
-        int offset, size_t length, PyObject *result) {
+static int _decode_cdma_paging_channel_msg(const char *b, int offset,
+                                           size_t length, json &result) {
     int iMsgLength = _search_result_int(result, "Message Length");
     int iMessageID = _search_result_int(result, "Message ID");
     int finaloffset = offset + iMsgLength - 2;
@@ -71,12 +71,11 @@ static int _decode_cdma_paging_channel_msg (const char *b,
         return offset;
     }
 
-    PyObject *old_object;
-
     // Only support for System Parameters Msg
-    offset += _decode_by_fmt(CdmaPagingChannelMsg_SystemParameters,
-            ARRAY_SIZE(CdmaPagingChannelMsg_SystemParameters, Fmt),
-            b, offset, length, result);
+    offset +=
+        _decode_by_fmt(CdmaPagingChannelMsg_SystemParameters,
+                       ARRAY_SIZE(CdmaPagingChannelMsg_SystemParameters, Fmt),
+                       b, offset, length, result);
 
     unsigned int utemp = _search_result_uint(result, "SID");
     int iSID = (utemp >> 2) & 32767;
@@ -84,15 +83,12 @@ static int _decode_cdma_paging_channel_msg (const char *b,
     utemp = _search_result_uint(result, "NID");
     iNID += (utemp >> 18) & 16383;
 
-    old_object = _replace_result_int(result, "SID", iSID);
-    Py_DECREF(old_object);
-    old_object = _replace_result_int(result, "NID", iNID);
-    Py_DECREF(old_object);
+    _replace_result_int(result, "SID", iSID);
+    _replace_result_int(result, "NID", iNID);
 
     utemp = _search_result_uint(result, "Base ID");
     int iBaseID = (utemp >> 14) & 65535;
-    old_object = _replace_result_int(result, "Base ID", iBaseID);
-    Py_DECREF(old_object);
+    _replace_result_int(result, "Base ID", iBaseID);
 
     utemp = _search_result_uint(result, "Base Latitude");
     int iBaseLatitude = (utemp >> 1) & 4194303;
@@ -100,10 +96,8 @@ static int _decode_cdma_paging_channel_msg (const char *b,
         iBaseLatitude = iBaseLatitude - 4194304;
     }
     float fBaseLatitude = iBaseLatitude * 1.0 / 14400;
-    PyObject *pyfloat = Py_BuildValue("f", fBaseLatitude);
-    old_object = _replace_result(result, "Base Latitude", pyfloat);
-    Py_DECREF(old_object);
-    Py_DECREF(pyfloat);
+    double pyfloat = fBaseLatitude;
+    _replace_result(result, "Base Latitude", pyfloat);
 
     int iBaseLongitude = (utemp & 1) * 4194304;
     utemp = _search_result_uint(result, "Base Longitude");
@@ -112,24 +106,18 @@ static int _decode_cdma_paging_channel_msg (const char *b,
         iBaseLongitude = iBaseLongitude - 8388608;
     }
     float fBaseLongitude = iBaseLongitude * 1.0 / 14400;
-    pyfloat = Py_BuildValue("f", fBaseLongitude);
-    old_object = _replace_result(result, "Base Longitude", pyfloat);
-    Py_DECREF(old_object);
-    Py_DECREF(pyfloat);
+    pyfloat = fBaseLongitude;
+    _replace_result(result, "Base Longitude", pyfloat);
 
     utemp = _search_result_uint(result, "T_Add");
     int iTAdd = (utemp >> 24) & 63;
     int iTDrop = (utemp >> 18) & 63;
     int iTComp = (utemp >> 14) & 15;
     int iTTDrop = (utemp >> 10) & 15;
-    old_object = _replace_result_int(result, "T_Add", iTAdd);
-    Py_DECREF(old_object);
-    old_object = _replace_result_int(result, "T_Drop", iTDrop);
-    Py_DECREF(old_object);
-    old_object = _replace_result_int(result, "T_Comp", iTComp);
-    Py_DECREF(old_object);
-    old_object = _replace_result_int(result, "T_TDrop", iTTDrop);
-    Py_DECREF(old_object);
+    _replace_result_int(result, "T_Add", iTAdd);
+    _replace_result_int(result, "T_Drop", iTDrop);
+    _replace_result_int(result, "T_Comp", iTComp);
+    _replace_result_int(result, "T_TDrop", iTTDrop);
 
     offset = finaloffset;
     return offset;

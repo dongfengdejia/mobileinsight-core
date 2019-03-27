@@ -2,28 +2,24 @@
  * Author: Jiayao Li
  */
 
-#include <Python.h>
-
-#include "consts.h"
 #include "log_config.h"
+#include "consts.h"
 
 #include <algorithm>
 
-int
-get_equip_id (int type_id) {
+int get_equip_id(int type_id) {
     const int EQUIP_ID_MASK = 0x0000F000;
     return (type_id & EQUIP_ID_MASK) >> 12;
 }
 
-int
-get_item_id (int type_id) {
-    const int ITEM_ID_MASK  = 0x00000FFF;
+int get_item_id(int type_id) {
+    const int ITEM_ID_MASK = 0x00000FFF;
     return type_id & ITEM_ID_MASK;
 }
 
 // Note that all type IDs should have the same equip ID.
-BinaryBuffer
-encode_log_config (LogConfigOp op, const std::vector<int>& type_ids) {
+BinaryBuffer encode_log_config(LogConfigOp op,
+                               const std::vector<int> &type_ids) {
     BinaryBuffer buf;
     buf.first = NULL;
     buf.second = 0;
@@ -35,7 +31,7 @@ encode_log_config (LogConfigOp op, const std::vector<int>& type_ids) {
         buf.first[1] = 0;
         buf.first[2] = 0;
         buf.first[3] = 0;
-        *((int *)(buf.first + 4)) = (int) op;
+        *((int *)(buf.first + 4)) = (int)op;
         break;
 
     case DIAG_BEGIN_1D:
@@ -116,73 +112,70 @@ encode_log_config (LogConfigOp op, const std::vector<int>& type_ids) {
         *((int *)(buf.first)) = 0x0060;
         break;
 
-
-    case SET_MASK:
-        {
-            int equip_id = -1;
-            int highest = -1;
-            for (size_t i = 0; i < type_ids.size(); i++) {
-                int id = type_ids[i];
-                // Haotian: the highest value calculated here may not be proper
-                int e = get_equip_id(id);
-                if (equip_id == -1) {
-                    equip_id = e;
-                    highest = std::max(highest, get_item_id(id));
-                } else if (equip_id == e) {
-                    highest = std::max(highest, get_item_id(id));
-                } else {
-                    equip_id = -1;
-                    break;
-                }
-            }
-            // Haotian: hardcode highest value
-            switch (equip_id) {
-                case 0x00000001:    // CDMA, _1xEV, ......
-                    highest = 0x00000FD3;
-                    break;
-                case 0x00000004:    // WCDMA, ......
-                    highest = 0x00000920;
-                    break;
-                case 0x00000007:    // UMTS, ......
-                    highest = 0x00000B56;
-                    break;
-                case 0x0000000b:    // LTE, ......
-                    highest = 0x000001C4;
-                    break;
-                default:
-                    break;
-            }
+    case SET_MASK: {
+        int equip_id = -1;
+        int highest = -1;
+        for (size_t i = 0; i < type_ids.size(); i++) {
+            int id = type_ids[i];
+            // Haotian: the highest value calculated here may not be proper
+            int e = get_equip_id(id);
             if (equip_id == -1) {
-                ;   // fail to extract an unique equid id
+                equip_id = e;
+                highest = std::max(highest, get_item_id(id));
+            } else if (equip_id == e) {
+                highest = std::max(highest, get_item_id(id));
             } else {
-                int mask_len = (highest / 8) + 1;
-                buf.second = sizeof(char) * 4 + sizeof(int) * 3 + mask_len;
-                buf.first = new char[buf.second];
-                buf.first[0] = 115; // 0x73
-                buf.first[1] = 0;
-                buf.first[2] = 0;
-                buf.first[3] = 0;
-                *((int *)(buf.first + 4)) = (int) op;
-                *((int *)(buf.first + 8)) = equip_id;
-                *((int *)(buf.first + 12)) = highest + 1;
-                char *mask = buf.first + 16;
-                for (int i = 0; i < mask_len; i++)
-                    mask[i] = 0;
-                for (size_t i = 0; i < type_ids.size(); i++) {
-                    int id = type_ids[i];
-                    int x = get_item_id(id);
-                    mask[x / 8] |= 1 << (x % 8);
-                }
-
+                equip_id = -1;
+                break;
             }
+        }
+        // Haotian: hardcode highest value
+        switch (equip_id) {
+        case 0x00000001: // CDMA, _1xEV, ......
+            highest = 0x00000FD3;
+            break;
+        case 0x00000004: // WCDMA, ......
+            highest = 0x00000920;
+            break;
+        case 0x00000007: // UMTS, ......
+            highest = 0x00000B56;
+            break;
+        case 0x0000000b: // LTE, ......
+            highest = 0x000001C4;
+            break;
+        default:
             break;
         }
+        if (equip_id == -1) {
+            ; // fail to extract an unique equid id
+        } else {
+            int mask_len = (highest / 8) + 1;
+            buf.second = sizeof(char) * 4 + sizeof(int) * 3 + mask_len;
+            buf.first = new char[buf.second];
+            buf.first[0] = 115; // 0x73
+            buf.first[1] = 0;
+            buf.first[2] = 0;
+            buf.first[3] = 0;
+            *((int *)(buf.first + 4)) = (int)op;
+            *((int *)(buf.first + 8)) = equip_id;
+            *((int *)(buf.first + 12)) = highest + 1;
+            char *mask = buf.first + 16;
+            for (int i = 0; i < mask_len; i++)
+                mask[i] = 0;
+            for (size_t i = 0; i < type_ids.size(); i++) {
+                int id = type_ids[i];
+                int x = get_item_id(id);
+                mask[x / 8] |= 1 << (x % 8);
+            }
+        }
+        break;
+    }
 
     case DEBUG_WCDMA_L1:
-        //Yuanjie: enable debugging messages (currently for iCellular only)
+        // Yuanjie: enable debugging messages (currently for iCellular only)
         buf.second = 12;
         buf.first = new char[buf.second];
-        //Enable WCDMA L1 debug message (for RSCP)
+        // Enable WCDMA L1 debug message (for RSCP)
         buf.first[0] = 0x7d;
         buf.first[1] = 0x04;
         buf.first[2] = 0xb9;
@@ -198,10 +191,10 @@ encode_log_config (LogConfigOp op, const std::vector<int>& type_ids) {
         break;
 
     case DEBUG_LTE_ML1:
-        //Yuanjie: enable debugging messages (currently for iCellular only)
+        // Yuanjie: enable debugging messages (currently for iCellular only)
         buf.second = 12;
         buf.first = new char[buf.second];
-        //Enable LTE ML1 debug message (for RSRP)
+        // Enable LTE ML1 debug message (for RSRP)
         buf.first[0] = 0x7d;
         buf.first[1] = 0x04;
         buf.first[2] = 0x25;

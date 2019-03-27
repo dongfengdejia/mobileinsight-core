@@ -6,11 +6,11 @@
 #include "log_packet.h"
 #include "log_packet_helper.h"
 
-const Fmt _1xEVConnectedStateSearchInfo_Fmt [] = {
+const Fmt _1xEVConnectedStateSearchInfo_Fmt[] = {
     {UINT, "Version", 1},
 };
 
-const Fmt _1xEVConnectedStateSearchInfo_Payload_v0 [] = {
+const Fmt _1xEVConnectedStateSearchInfo_Payload_v0[] = {
     {UINT, "Serving Sector Handoffs Since Reset", 4},
     {UINT, "ASET Pilot Add Events Since Reset", 4},
     {UINT, "ASET Pilot Drop Events Since Reset", 4},
@@ -45,26 +45,27 @@ const Fmt _1xEVConnectedStateSearchInfo_Payload_v0 [] = {
     {UINT, "Current Data Level Indicator", 1},
 };
 
-static int _decode_1xev_connected_state_search_info_payload (const char *b,
-        int offset, size_t length, PyObject *result) {
+static int _decode_1xev_connected_state_search_info_payload(const char *b,
+                                                            int offset,
+                                                            size_t length,
+                                                            json &result) {
     int start = offset;
     int pkt_ver = _search_result_int(result, "Version");
 
     switch (pkt_ver) {
-    case 0:
-        {
-            offset += _decode_by_fmt(_1xEVConnectedStateSearchInfo_Payload_v0,
-                    ARRAY_SIZE(_1xEVConnectedStateSearchInfo_Payload_v0, Fmt),
-                    b, offset, length, result);
-            int iRSSI = _search_result_int(result, "Current RSSI (dBm)");
-            iRSSI = 0 - iRSSI;
-            PyObject *old_object = _replace_result_int(result,
-                    "Current RSSI (dBm)", iRSSI);
-            Py_DECREF(old_object);
-            return offset - start;
-        }
+    case 0: {
+        offset += _decode_by_fmt(
+            _1xEVConnectedStateSearchInfo_Payload_v0,
+            ARRAY_SIZE(_1xEVConnectedStateSearchInfo_Payload_v0, Fmt), b,
+            offset, length, result);
+        int iRSSI = _search_result_int(result, "Current RSSI (dBm)");
+        iRSSI = 0 - iRSSI;
+        _replace_result_int(result, "Current RSSI (dBm)", iRSSI);
+        return offset - start;
+    }
     default:
-        printf("(MI)Unknown 1xEV Connected State Search Info version: 0x%x\n", pkt_ver);
+        printf("(MI)Unknown 1xEV Connected State Search Info version: 0x%x\n",
+               pkt_ver);
         return 0;
     }
 }
