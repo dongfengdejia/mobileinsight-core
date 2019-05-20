@@ -255,16 +255,55 @@ static int _decode_lte_rrc_ota(const char *b, int offset, size_t length,
             printf("(MI)Unknown LTE RRC PDU Type: 0x%x\n", pdu_number);
             return 0;
         } else {
-            if(type_name != "LTE-RRC_UL_DCCH"){
-                std::string type_str = "raw_msg/";
-                type_str += type_name;
-                result["Msg"] = std::string(type_str.c_str()) +
-                                make_string(b + offset, pdu_length);
-            
-            }
-            else{
-                result["Msg"] = type_name + binary_decode(0xca, b + offset, pdu_length);
-            }
+			int type_code = 0;
+            //std::string type_str = "raw_msg/";
+            //type_str += type_name;
+            //result["Msg"] = std::string(type_str.c_str()) +
+            //                make_string(b + offset, pdu_length);
+			//                        "LTE-RRC_PCCH": 200,
+// 57         "LTE-RRC_DL_DCCH": 201,
+// 58         "LTE-RRC_UL_DCCH": 202,
+// 59         "LTE-RRC_BCCH_DL_SCH": 203,
+// 60         "LTE-RRC_DL_CCCH": 204,
+// 61         "LTE-RRC_UL_CCCH": 205,
+			int type_len = std::string(type_name).size();
+			switch(type_len){
+				case 12: // RRC_PCCH
+					type_code = 200;
+					break;
+				case 19: // RRC_BCCH_DL_SCH
+					type_code = 203;
+					break;
+				case 15:
+					switch(type_name[8]){
+						case 'D':
+							switch (type_name[11]){
+								case 'D': // RRC_DL_DCCH
+									type_code = 201;
+									break;
+								case 'C': // RRC_DL_CCCH
+									type_code = 204;
+									break;
+							}
+							break;
+						case 'U':
+							switch (type_name[11]){
+								case 'D': // RRC_UL_DCCH
+									type_code = 202;
+									break;
+								case 'C': // RRC_UL_CCCH
+									type_code = 205;
+									break;
+							}
+							break;
+						default:
+							type_code = 0;
+					}
+					break;
+				default:
+					type_code = 0;
+			}
+            result["Msg"] = binary_decode(type_code, b + offset, pdu_length);
             return (offset - start) + pdu_length;
         }
     } else {
@@ -281,16 +320,49 @@ static int _decode_lte_rrc_ota(const char *b, int offset, size_t length,
             printf("(MI)Unknown LTE RRC PDU Type: 0x%x\n", pdu_number);
             return 0;
         } else {
-            if(type_name != "LTE-RRC_UL_DCCH"){
-                std::string type_str = "raw_msg/";
-                type_str += type_name;
-                result["Msg"] = std::string(type_str.c_str()) +
-                                make_string(b + offset, pdu_length);
-            
-            }
-            else{
-                result["Msg"] = type_name + binary_decode(0xca, b + offset, pdu_length);
-            }
+			unsigned int type_code = 0;
+            //std::string type_str = "raw_msg/";
+            //type_str += type_name;
+           // result["Msg"] = std::string(type_str.c_str()) +
+             //               make_string(b + offset, pdu_length);
+			int type_len = std::string(type_name).size();
+			switch(type_len){
+				case 12: // RRC_PCCH
+					type_code = 200;
+					break;
+				case 19: // RRC_BCCH_DL_SCH
+					type_code = 203;
+					break;
+				case 15:
+					switch(type_name[8]){
+						case 'D':
+							switch (type_name[11]){
+								case 'D': // RRC_DL_DCCH
+									type_code = 201;
+									break;
+								case 'C': // RRC_DL_CCCH
+									type_code = 204;
+									break;
+							}
+							break;
+						case 'U':
+							switch (type_name[11]){
+								case 'D': // RRC_UL_DCCH
+									type_code = 202;
+									break;
+								case 'C': // RRC_UL_CCCH
+									type_code = 205;
+									break;
+							}
+							break;
+						default:
+							type_code = 0;
+					}
+					break;
+				default:
+					type_code = 0;
+			}
+            result["Msg"] = binary_decode(0xca, b + offset, pdu_length);
             return (offset - start) + pdu_length;
         }
     }
@@ -366,8 +438,10 @@ static size_t _decode_lte_nas_plain(const char *b, int offset, size_t length,
     }
 
     size_t pdu_length = length - offset;
-    result["Msg"] = std::string("raw_msg/LTE-NAS_EPS_PLAIN") +
-                    make_string(b + offset, pdu_length);
+    //result["Msg"] = std::string("raw_msg/LTE-NAS_EPS_PLAIN") +
+    //                make_string(b + offset, pdu_length);
+	//"LTE-NAS_EPS_PLAIN": 250,
+	result["Msg"] = binary_decode(250, b + offset, pdu_length);
     return length - start;
 }
 
@@ -1865,8 +1939,10 @@ static int _decode_lte_pdcp_dl_srb_integrity_data_pdu(const char *b, int offset,
 
     int pdu_length = _search_result_int(result, "PDU Size");
 
-    result["Msg"] = std::string("raw_msg/LTE-PDCP_DL_SRB") +
-                    make_string(b + offset, pdu_length);
+    //result["Msg"] = std::string("raw_msg/LTE-PDCP_DL_SRB") +
+    //                make_string(b + offset, pdu_length);
+	//"LTE-PDCP_DL_SRB": 300
+	result["Msg"] = binary_decode(300, b + offset, pdu_length);
     return (offset - start) + pdu_length;
 }
 
@@ -1895,8 +1971,10 @@ static int _decode_lte_pdcp_ul_srb_integrity_data_pdu(const char *b, int offset,
 
     int pdu_length = _search_result_int(result, "PDU Size");
 
-    result["Msg"] = std::string("raw_msg/LTE-PDCP_UL_SRB") +
-                    make_string(b + offset, pdu_length);
+    //result["Msg"] = std::string("raw_msg/LTE-PDCP_UL_SRB") +
+    //                make_string(b + offset, pdu_length);
+	//"LTE-PDCP_UL_SRB": 301
+	result["Msg"] = binary_decode(301, b + offset, pdu_length);
     return (offset - start) + pdu_length;
 }
 
@@ -3198,9 +3276,9 @@ static int _decode_lte_rlc_ul_am_all_pdu_subpkt(const char *b, int offset,
                         }
                     }
                     offset += iLoggedBytes;
-                    //result_pdu[("RLCUL PDU[" + SSTR(j) + "]").c_str()] =
+                    //result_pdu[("RLCUL PDU[" + SSTR(i) + "]").c_str()] =
                     //    result_pdu_item;
-                    result_pdu.push_back(result_pdu_item);
+					result_pdu.push_back(result_pdu_item);
                 }
                 result_subpkt["RLCUL PDUs"] = result_pdu;
             } else {
@@ -3536,9 +3614,9 @@ static int _decode_lte_rlc_dl_am_all_pdu_subpkt(const char *b, int offset,
                         }
                     }
                     offset += iLoggedBytes;
-                    //result_pdu[("RLCDL PDU[" + SSTR(j) + "]").c_str()] =
+                    //result_pdu[("RLCDL PDU[" + SSTR(i) + "]").c_str()] =
                     //    result_pdu_item;
-                    result_pdu.push_back(result_pdu_item);
+					result_pdu.push_back(result_pdu_item);
                 }
                 result_subpkt["RLCDL PDUs"] = result_pdu;
             } else {
