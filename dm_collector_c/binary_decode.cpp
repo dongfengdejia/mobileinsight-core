@@ -20,7 +20,7 @@ std::string exec(const char *cmd) {
     }
     return result;
 }
-std::string toAHex(char * Msg, int size){
+std::string toAHex(unsigned char * Msg, int size){
     char buf[2200] = {0};
     for(int i = 0; i < size; i++){
         sprintf(buf, "%s\\x%02x",buf, Msg[i]);
@@ -43,7 +43,7 @@ std::string binary_decode(unsigned char type, const char * Msg, int size){
     buf[6] = tmp.e[1];
     buf[7] = tmp.e[0];
     memcpy(buf + 8, Msg, size);
-    string Hex = toAHex((char*)buf, size + 8);
+    string Hex = toAHex((unsigned char*)buf, size + 8);
 
     string cmd = "echo -ne '" + Hex + "' | /data/local/tmp/testsuite/android_pie_ws_dissector";
     string reply = exec(cmd.c_str());
