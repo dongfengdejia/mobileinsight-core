@@ -49,6 +49,7 @@
 #include "srch_tng_1x_searcher_dump.h"
 #include "wcdma_rrc_states.h"
 #include "wcdma_search_cell_reselection_rank.h"
+#include "binary_decode.h"
 
 // #ifdef __ANDROID__
 // #include <android/log.h>
@@ -254,10 +255,16 @@ static int _decode_lte_rrc_ota(const char *b, int offset, size_t length,
             printf("(MI)Unknown LTE RRC PDU Type: 0x%x\n", pdu_number);
             return 0;
         } else {
-            std::string type_str = "raw_msg/";
-            type_str += type_name;
-            result["Msg"] = std::string(type_str.c_str()) +
-                            make_string(b + offset, pdu_length);
+            if(type_name != "LTE-RRC_UL_DCCH"){
+                std::string type_str = "raw_msg/";
+                type_str += type_name;
+                result["Msg"] = std::string(type_str.c_str()) +
+                                make_string(b + offset, pdu_length);
+            
+            }
+            else{
+                result["Msg"] = type_name + binary_decode(0xca, b + offset, pdu_length);
+            }
             return (offset - start) + pdu_length;
         }
     } else {
@@ -274,10 +281,16 @@ static int _decode_lte_rrc_ota(const char *b, int offset, size_t length,
             printf("(MI)Unknown LTE RRC PDU Type: 0x%x\n", pdu_number);
             return 0;
         } else {
-            std::string type_str = "raw_msg/";
-            type_str += type_name;
-            result["Msg"] = std::string(type_str.c_str()) +
-                            make_string(b + offset, pdu_length);
+            if(type_name != "LTE-RRC_UL_DCCH"){
+                std::string type_str = "raw_msg/";
+                type_str += type_name;
+                result["Msg"] = std::string(type_str.c_str()) +
+                                make_string(b + offset, pdu_length);
+            
+            }
+            else{
+                result["Msg"] = type_name + binary_decode(0xca, b + offset, pdu_length);
+            }
             return (offset - start) + pdu_length;
         }
     }
