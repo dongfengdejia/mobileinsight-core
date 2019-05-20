@@ -3185,8 +3185,9 @@ static int _decode_lte_rlc_ul_am_all_pdu_subpkt(const char *b, int offset,
                         }
                     }
                     offset += iLoggedBytes;
-                    result_pdu[("RLCUL PDU[" + SSTR(i) + "]").c_str()] =
-                        result_pdu_item;
+                    //result_pdu[("RLCUL PDU[" + SSTR(j) + "]").c_str()] =
+                    //    result_pdu_item;
+                    result_pdu.push_back(result_pdu_item);
                 }
                 result_subpkt["RLCUL PDUs"] = result_pdu;
             } else {
@@ -3522,8 +3523,9 @@ static int _decode_lte_rlc_dl_am_all_pdu_subpkt(const char *b, int offset,
                         }
                     }
                     offset += iLoggedBytes;
-                    result_pdu[("RLCDL PDU[" + SSTR(i) + "]").c_str()] =
-                        result_pdu_item;
+                    //result_pdu[("RLCDL PDU[" + SSTR(j) + "]").c_str()] =
+                    //    result_pdu_item;
+                    result_pdu.push_back(result_pdu_item);
                 }
                 result_subpkt["RLCDL PDUs"] = result_pdu;
             } else {
